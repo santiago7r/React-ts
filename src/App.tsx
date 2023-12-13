@@ -1,36 +1,18 @@
 
 import { useEffect, useState } from "react";
+import useUsers from "./hooks/useUsers";
 import { CanceledError } from "./services/api-client";
 import userService, { User } from "./services/user-service";
 
  
 function App() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [errors, setErrors] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-
-    setLoading(true);
-    const {request, cancel} = userService.getAllUsers();
-      request.then(res => {
-        setUsers(res.data)
-        setLoading(false)
-      })
-      .catch(err => {
-        if(err instanceof CanceledError) return;
-        setErrors(err.message)
-        setLoading(false)
-      })
-
-    return () => cancel();
-  }, []) 
+  const {users, errors, loading, setUsers, setErrors } = useUsers();
 
   const deleteUser = (user: User) => {
     const originalUsers = [...users]
     setUsers(users.filter(u => u.id !== user.id));
 
-    userService.deleteUser(user.id).catch(err => {
+    userService.delete(user.id).catch(err => {
       setErrors(err.message);
       setUsers(originalUsers);
     })
@@ -45,7 +27,7 @@ function App() {
 
     setUsers([...users, newUser])
 
-    userService.createUser(newUser)
+    userService.create(newUser)
     .then(({ data: newUserSaved }) => setUsers([...users, newUserSaved]))
     .catch(err => {
       setErrors(err.message);
@@ -58,7 +40,7 @@ function App() {
     const updatedUser = { ...user, name: user.name + '!!'};
     setUsers(users.map(u => u.id === user.id ? updatedUser : u))
 
-    userService.updateUser(updatedUser)
+    userService.update(updatedUser)
       .catch(err => {
         setErrors(err.message);
         setUsers(originalUsers)
